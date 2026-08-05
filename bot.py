@@ -32,24 +32,21 @@ def gece_yarisi_sifirla():
     
     while True:
         simdi = datetime.now(turkiye_saati)
-        # Gece 00:00:00'a kalan saniyeyi doğru hesaplama
-        yarin = simdi.replace(day=simdi.day + 1, hour=0, minute=0, second=0, microsecond=0) if simdi.day < 28 else simdi
-        # Güvenli kalan saniye hesabı:
         kalan_saniye = 86400 - (simdi.hour * 3600 + simdi.minute * 60 + simdi.second)
-        
         time.sleep(kalan_saniye)
         
         toplam_tutar = 0.0
         tutar_kaydet(0.0)
-        print("Sistem Bildirimi: Saat 00:00 oldu, toplam tutar otomatik sıfırlandı.")
-        time.sleep(5) # Tekrar tetiklenmemesi için kısa bekleme
+        time.sleep(5)
 
 threading.Thread(target=gece_yarisi_sifirla, daemon=True).start()
 
-# Tutarı sıfırlamak veya öğrenmek için komut
 @bot.message_handler(func=lambda message: True)
 def mesaj_takip(message):
     global toplam_tutar
+    if not message.text:
+        return
+        
     metin = message.text.lower().strip()
     
     if metin == "toplam gelen tutar nedir":
@@ -62,9 +59,10 @@ def mesaj_takip(message):
         bot.reply_to(message, "Sıfırlandı! Bugünün toplamı 0.00 yapıldı.")
         return
 
-    # Sadece içinde "k", "onay" veya net sayılar geçen mesajları yakala
-    # (Buraya gruptaki mesaj formatınıza göre ekleme yapabilirsiniz)
-    bulunanlar = re.findall(r'(\d+(?:\.\d+)?)\s*(k)?', metin)
+    # Binlik ayırıcı noktaları kaldırıp sayıları yakala (1.200k -> 1200k)
+    temiz_metin = metin.replace('.', '')
+    bulunanlar = re.findall(r'(\d+)\s*(k)?', temiz_metin)
+    
     if bulunanlar:
         eklenen = 0.0
         for sayi, k_var in bulunanlar:
@@ -75,3 +73,6 @@ def mesaj_takip(message):
         
         toplam_tutar += eklenen
         tutar_kaydet(toplam_tutar)
+        bot.reply_to(message, f"✅ Eklenen: {eklenen:,.2f} | Güncel Toplam: {toplam_tutar:,.2f}")
+
+bot.infinity_polling()
