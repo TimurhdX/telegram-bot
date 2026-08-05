@@ -6,7 +6,7 @@ from datetime import datetime
 import pytz
 import os
 
-BOT_TOKEN = "8609424195:AAG3ya5eic-kwumiVZwOmAA78McaFJkhBfE"
+BOT_TOKEN = "8609424195:AAFhOhNGd4YQ633zQ81CYtWoRi_tWuYAr_w"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 DOSYA_ADI = "toplam.txt"
