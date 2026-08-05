@@ -49,30 +49,43 @@ def mesaj_takip(message):
         
     metin = message.text.lower().strip()
     
+    # Toplam sorgulama
     if metin == "toplam gelen tutar nedir":
-        bot.reply_to(message, f"📊 Bugün grupta toplanan toplam tutar: {toplam_tutar:,.2f}")
+        bot.reply_to(message, f"📊 Bugün grupta toplanan toplam tutar: {toplam_tutar:,.2f} TL")
         return
 
+    # Manuel sıfırlama komutu
     if metin == "/sifirla":
         toplam_tutar = 0.0
         tutar_kaydet(0.0)
-        bot.reply_to(message, "Sıfırlandı! Bugünün toplamı 0.00 yapıldı.")
+        bot.reply_to(message, "🔄 Sıfırlandı! Bugünün toplamı 0.00 TL yapıldı.")
         return
 
-    # Binlik ayırıcı noktaları kaldırıp sayıları yakala (1.200k -> 1200k)
-    temiz_metin = metin.replace('.', '')
-    bulunanlar = re.findall(r'(\d+)\s*(k)?', temiz_metin)
-    
-    if bulunanlar:
-        eklenen = 0.0
-        for sayi, k_var in bulunanlar:
-            val = float(sayi)
-            if k_var:
-                val *= 1000
-            eklenen += val
+    # 1. Satır başındaki sıra numaralarını (1., 2), 3-) temizle
+    satirlar = metin.split('\n')
+    eklenen_toplam = 0.0
+
+    for satir in satirlar:
+        # Satır başındaki sıra numarasını sil
+        temiz_satir = re.sub(r'^\s*\d+[\.\)\-]\s*', '', satir.strip())
         
-        toplam_tutar += eklenen
+        # TL, TRY veya K ile biten ya da noktayla binlik yazılmış tutarları bul
+        # Örnekler: 200.000, 200k, 150 tl, 1.500 try, 500000
+        bulunanlar = re.findall(r'(\d+(?:\.\d+)*)\s*(k|tl|try)?', temiz_satir)
+        
+        for sayi_str, birim in bulunanlar:
+            # Noktaları kaldır (200.000 -> 200000)
+            saf_sayi = float(sayi_str.replace('.', ''))
+            
+            # K var ise 1000 ile çarp
+            if birim == 'k':
+                saf_sayi *= 1000
+                
+            eklenen_toplam += saf_sayi
+
+    if eklenen_toplam > 0:
+        toplam_tutar += eklenen_toplam
         tutar_kaydet(toplam_tutar)
-        bot.reply_to(message, f"✅ Eklenen: {eklenen:,.2f} | Güncel Toplam: {toplam_tutar:,.2f}")
+        bot.reply_to(message, f"✅ Eklenen: {eklenen_toplam:,.2f} TL | Güncel Toplam: {toplam_tutar:,.2f} TL")
 
 bot.infinity_polling()
